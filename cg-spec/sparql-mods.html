@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>RDF-star and SPARQL-star</title>
+  <script src="https://www.w3.org/Tools/respec/respec-w3c" class="remove" defer></script>
+  <script class="remove">
+   // All config options at https://respec.org/docs/
+   var respecConfig = {
+      specStatus: "CG-DRAFT",
+      editors: [
+        {
+          "name": "Andy Seaborne",
+          "url": "https://afs.github.io/",
+          "company": "Apache Software Foundation",
+          "companyURL": "https://www.apache.org/",
+        },
+      ],
+      github: {
+        repoURL: "w3c/rdf-star",
+        branch: "main",
+      },
+      wgPublicList: "public-rdf-star",
+      shortName: "rdf-star-sparql",
+      group: "rdf-dev",
+      testSuiteURI: "https://w3c.github.io/rdf-star/tests/",
+      implementationReportURI:"https://w3c.github.io/rdf-star/reports/",
+      maxTocLevel: 3,
+    };
+  </script>
+  <style>
+    /* copied from TR/turtle, and adapted for SPARQL rules */
+    .grammar td { font-family: monospace; vertical-align: top; }
+    .grammar-literal, .token { color: gray;}
+    .grammar_comment { color: #A52A2A; font-style: italic; }
+
+    /* better looking embedded examples */
+    .example .example {
+      border-left-width: .15em;
+    }
+
+    .box {   
+        border: solid;
+        border-width: 1px;
+        border-color: #888;
+        padding-left: 10px;
+        padding-right: 10px;
+        margin-left: 5%;
+        margin-right: 10%;
+    }
+    .operator {
+        border: solid;
+        border-width: 1px;
+        border-color: #888;
+        width: 100%;
+        margin: 0px;
+    }
+    .operator tr {
+        border: solid;
+         border-color: #888;
+        border-width: 1px;
+    }
+    
+    .operator th {
+        border: solid;
+        border-color: #888;
+        border-width: 1px;
+    }
+    .operator td {
+        border: solid;
+        border-color: #888;
+        border-width: 1px;
+    }
+    
+    .heavy { color:black; font-weight:bold }
+    
+  </style>
+</head>
+<body>
+  <!-- Required -->
+  <section id="sotd">
+  </section>
+  <section id="abstract">
+  </section>
+
+  <section id="introduction">
+    <h1>Introduction</h1>
+    <p><i>Work-in-progress</i>: Material describing modification to existing SPARQL functions and
+operators.</p>
+    <p>New text begins at <a href="#operators">here</a>.
+  </section>
+
+  <section id="discussion">
+    <h1>Discussion points</h1>
+    <p>Also look for @@ in the text.</p>
+    <ul>
+      <li>Should we map operators <code>&lt;</code>, <code>&gt;</code> as well as <code>=</code>
+        (default: yes - more consistent)</li>
+      <li>Is there a datatype for embedded triple terms?</li>
+      <li>Instead of <code>RDFstar-compare</code>, define with a general <code>sparql-compare</code>.</li>
+    </ul>
+  </section>
+  
+  <section id="operators">
+    <!-- @@ Merge into previous section -->
+    <h2>Function and Operator Extensions</h2>
+
+    <p>This section covers extensions to functions and operators for triple terms.</p>
+    <ul>
+      <li>Modifed <code>sameTerm</code> function (SPARQL 1.1 <a 
+                                            href="https://www.w3.org/TR/sparql11-query/#func-sameTerm"
+                                            >Section 17.4.1.8</a>)</li>
+
+      <li>New function <code>RDFstar-compare</code> for the 
+        <code>=</code> operator and other comparision mappings</li>
+      <li>Operator mapping for the <code>=</code> and other operators (SPARQL 1.1 <a 
+                                                                         href="https://www.w3.org/TR/sparql11-query/#OperatorMapping"
+                                                                         >Section 17.3</a>)</li>
+      <li>Modified <code>RDF-termEquals</code></li>
+      <li>Modified <code>ORDER BY</code> (SPARQL 1.1 <a 
+                                   href="https://www.w3.org/TR/sparql11-query/#modOrderBy"
+                                   >Section 15.1</a>)</li>
+    </ul>
+
+    <section id="rdf-star-func-sameTerm">
+      <h3><code class="heavy">sameTerm</code></h3>
+      
+      <p class="box">
+        <code>xsd:boolean</code>
+        <code style="color:black;font-weight:bold">sameTerm</code>
+        (<code style="color:black">term</code>, <code style="color:black">term</code>)
+      </p>
+      
+      <!-- Original SPARQL 1.1 HTML:
+      <pre class="prototype"> <span class="return">xsd:boolean</span>  <span class="operator">sameTerm</span> (<span class="type"><span class="type RDFterm">RDF term</span></span> <span class="name">term1</span>, <span class="type"><span class="type RDFterm">RDF
+            term</span></span> <span class="name">term2</span>)</pre>
+      -->
+
+      <p>The function <code>sameTerm</code> is extended to support term comparision for
+        RDF-star triple terms by defining:
+      </p>
+      <div class="box">
+        <p>
+          If both arguments are RDF-star triple terms:
+        <p style="margin-left:20px">
+        <code style="color:black;font-weight:bold">sameTerm</code><code>(&lt;&lt;S1 P1 O1&gt;&gt;,
+          &lt;&lt;S2 P2 O2&gt;&gt;)</code>
+        </p>
+        <p>
+        is evaluated as
+        </p>
+        <p style="margin-left:20px">
+          <code>sameTerm(S1, S2) && sameTerm(P1, P2) && sameTerm(O1, O2)</code>
+        </p>
+        <p>This is applied recursively.</p>
+        <p>If one argument is an RDF-star triple term and the other argument is not, 
+          the result is <code>false</code>.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <h3><code class="heavy">RDFstar-compare</code></h3>
+      <p>The function <code>RDFstar-compare</code> is added in support of value-comparison
+        operators such as <code>=</code>and for <code>ORDER BY</code>.
+      </p>
+      <p class="box">
+        <code>xsd:boolean</code> &nbsp;
+        <code style="color:black;font-weight:bold">RDFstar-compare</code>
+        (
+        (<code style="color:black">term</code>, <code style="color:black">term</code>)
+        )
+      </p>
+      <p>The function <code>RDFstar-compare</code> returns -1,0,1, or throws an error,
+        based on the comparison of the 3 elements of an RDF-star triple term.
+      </p>
+      <div class="box">
+        <p id="defn-sparql-compare">Define:
+          <code>sparql-compare-any(A, B)</code> as:
+        </p>
+        <ul>
+          <li>If neither of both A and B are RDF-start triple terms,
+            compared by SPARQL 1.1 operators <code>&lt</code>,<code>=</code>,<code>&gt</code>)
+            and return that value (-1, 0, +1).
+          </li>
+          <li>If A and B are not both RDF-start triple terms, then error.</li>
+          <li>If <code>sparql-compare(SUBJECT(A), SUBJECT(B)) != 0</code>,
+            then return this value.</li>
+          <li>If <code>sparql-compare(PREDICATE(A), PREDICATE(B)) != 0</code>,
+            then return this value.</li>
+          <li>Return <code>sparql-compare(OBJECT(A), OBJECT(B))</code></li>
+        </ul>
+        
+        <p>
+f           If both arguments are RDF-star triple terms:
+        </p>
+        <p style="margin-left:20px">
+          <code style="color:black;font-weight:bold">RDFstar-compare</code><code>(&lt;&lt;S1 P1 O1&gt;&gt;,
+            &lt;&lt;S2 P2 O2&gt;&gt;)</code>
+        </p>
+        <p>
+          is evaluated as
+        </p>
+        <p style="margin-left:20px">sparql-compare(A, B)</p>
+      </div>
+      
+      <p><i>Option: whether to include as an operator mapping or only in ORDER BY</i></p>
+    </section>
+
+    <section>
+      <h3><code class="heavy">DATATYPE</code></h3>
+      <p>Note: <code>DATATYPE(&lt;&lt;:s :p :o&gt;&gt;)</code> is error, just like <code>DATATYPE(&lt;uri&gt;)</code>.</p>
+      <p><i>@@If there is a datatype for embedded triples, then extend
+          <code>DATATYPE</code> to return the datatype URI</i>.</p>
+    </section>
+
+  </section>
+
+  <section id="operator-mapping">
+    <h3>Operator Mappings</h3>
+
+    <p>New operator mappings are added for RDF-star triple terms for section 
+      <a href="https://www.w3.org/TR/sparql11-query/#OperatorMapping"
+         rel="nofollow">17.3 Operator Mapping</a>
+    </p>
+
+    <table class="operator">
+      <caption>SPARQL Binary Operators (RDF-star)</caption>
+      <tbody>
+        <tr>
+          <th class="major" scope="col">Operator</th>
+          <th class="major" scope="col">Type(A)</th>
+          <th class="major" scope="col">Type(B)</th>
+          <th class="major" scope="col">Evaluation</th>
+          <th class="major" scope="col">Result type</th>
+        </tr>
+
+        <tr>
+          <th colspan="5" class="subHeading" scope="col">SPARQL Tests</th>
+        </tr>
+        <tr>
+          <th>
+            <a href="#rRelationalExpression" title="RelationalExpression"
+               >A <span class="FAOTtoken">=</span> B</a>
+          </th>
+          <td>
+            <span class="type RDFterm">RDF term</span>
+          </td>
+          <td>
+            <span class="type RDFterm">RDF term</span>
+          </td>
+          <td class="xpathOp">
+            <a href="#defn-sparql-compare" class="SPARQLoperator"
+               >sparql-compare</a>(A, B) = 0
+          </td>
+          <td>xsd:boolean</td>
+        </tr>
+        <tr>
+          <th>
+            <a href="#rRelationalExpression" title="RelationalExpression"
+               >A <span class="FAOTtoken">!=</span> B</a>
+          </th>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>xsd:boolean</td>
+        </tr>
+        <tr>
+          <th>
+            <a href="#rRelationalExpression" title="RelationalExpression"
+               >A <span class="FAOTtoken">&lt;</span> B</a>
+          </th>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>xsd:boolean</td>
+        </tr>
+        <tr>
+          <th>
+            <a href="#rRelationalExpression" title="RelationalExpression"
+               >A <span class="FAOTtoken">&lt;=</span> B</a>
+          </th>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>xsd:boolean</td>
+        </tr>
+        <tr>
+          <th>
+            <a href="#rRelationalExpression" title="RelationalExpression"
+               >A <span class="FAOTtoken">&gt;</span> B</a>
+          </th>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>xsd:boolean</td>
+        </tr>
+        <tr>
+          <th>
+            <a href="#rRelationalExpression" title="RelationalExpression"
+               >A <span class="FAOTtoken">&gt;=</span> B</a>
+          </th>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>&nbsp;</td>
+          <td>xsd:boolean</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </section>
+
+  <section id="triple-term-comparison">
+    <h3>Comparing triple terms with <code>ORDER BY</code></h3>
+
+    <p>There is an added item to the ordering terms when they would not 
+      otherwise be ordered. RDF start triple terms are placed last (highest).</p>
+
+    <ol>
+      <li>(Lowest) no value assigned to the variable 
+        or expression in this solution.</li>
+      <li>Blank nodes</li>
+      <li>IRIs</li>
+      <li>RDF literals</li>
+      <li><i>RDF-star triple terms</i></li>
+    </ol>
+
+    <p>@@ <em>Comparision of embedded triple terms</em></p>
+    <p>@@ <code class="heavy">RDFstar-compare</code></p>
+</section>
+
+</section>
+</body>
