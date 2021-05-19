@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>RDF-star and SPARQL-star</title>
+  <title>SPARQL mods</title>
   <script src="https://www.w3.org/Tools/respec/respec-w3c" class="remove" defer></script>
   <script class="remove">
    // All config options at https://respec.org/docs/
@@ -73,6 +73,9 @@
     }
     
     .heavy { color:black; font-weight:bold }
+    .small { font-size: smaller; }
+}
+    
     
   </style>
 </head>
@@ -92,13 +95,14 @@ operators.</p>
 
   <section id="discussion">
     <h1>Discussion points</h1>
-    <p>Also look for @@ in the text.</p>
     <ul>
       <li>Should we map operators <code>&lt;</code>, <code>&gt;</code> as well as <code>=</code>
         (default: yes - more consistent)</li>
       <li>Is there a datatype for embedded triple terms?</li>
       <li>Instead of <code>RDFstar-compare</code>, define with a general <code>sparql-compare</code>.</li>
+      <li>Define "apply" to take a function and an RDF triple term and apply the function recursively.
     </ul>
+
   </section>
   
   <section id="operators">
@@ -113,10 +117,10 @@ operators.</p>
 
       <li>New function <code>RDFstar-compare</code> for the 
         <code>=</code> operator and other comparision mappings</li>
+      <li>Modified <code>RDFterm-equals</code></li>
       <li>Operator mapping for the <code>=</code> and other operators (SPARQL 1.1 <a 
                                                                          href="https://www.w3.org/TR/sparql11-query/#OperatorMapping"
                                                                          >Section 17.3</a>)</li>
-      <li>Modified <code>RDF-termEquals</code></li>
       <li>Modified <code>ORDER BY</code> (SPARQL 1.1 <a 
                                    href="https://www.w3.org/TR/sparql11-query/#modOrderBy"
                                    >Section 15.1</a>)</li>
@@ -161,29 +165,28 @@ operators.</p>
 
     <section>
       <h3><code class="heavy">RDFstar-compare</code></h3>
+      
       <p>The function <code>RDFstar-compare</code> is added in support of value-comparison
-        operators such as <code>=</code>and for <code>ORDER BY</code>.
+        operators such as <code>=</code> and for <code>ORDER BY</code>.
       </p>
       <p class="box">
         <code>xsd:boolean</code> &nbsp;
         <code style="color:black;font-weight:bold">RDFstar-compare</code>
-        (
         (<code style="color:black">term</code>, <code style="color:black">term</code>)
-        )
       </p>
       <p>The function <code>RDFstar-compare</code> returns -1,0,1, or throws an error,
         based on the comparison of the 3 elements of an RDF-star triple term.
       </p>
       <div class="box">
         <p id="defn-sparql-compare">Define:
-          <code>sparql-compare-any(A, B)</code> as:
+          <code>sparql-compare(A, B)</code> as:
         </p>
         <ul>
-          <li>If neither of both A and B are RDF-start triple terms,
-            compared by SPARQL 1.1 operators <code>&lt</code>,<code>=</code>,<code>&gt</code>)
-            and return that value (-1, 0, +1).
+          <li>If neither of both A and B are RDF-star triple terms,
+            compared by SPARQL 1.1 operators <code>&lt</code>, <code>=</code>, <code>&gt</code>)
+            and return that value (-1, 0, +1).<br/>
           </li>
-          <li>If A and B are not both RDF-start triple terms, then error.</li>
+          <li>If one of A and B is not an RDF-star triple terms, then error.</li>
           <li>If <code>sparql-compare(SUBJECT(A), SUBJECT(B)) != 0</code>,
             then return this value.</li>
           <li>If <code>sparql-compare(PREDICATE(A), PREDICATE(B)) != 0</code>,
@@ -192,7 +195,7 @@ operators.</p>
         </ul>
         
         <p>
-f           If both arguments are RDF-star triple terms:
+          If both arguments are RDF-star triple terms:
         </p>
         <p style="margin-left:20px">
           <code style="color:black;font-weight:bold">RDFstar-compare</code><code>(&lt;&lt;S1 P1 O1&gt;&gt;,
@@ -207,11 +210,46 @@ f           If both arguments are RDF-star triple terms:
       <p><i>Option: whether to include as an operator mapping or only in ORDER BY</i></p>
     </section>
 
-    <section>
-      <h3><code class="heavy">DATATYPE</code></h3>
-      <p>Note: <code>DATATYPE(&lt;&lt;:s :p :o&gt;&gt;)</code> is error, just like <code>DATATYPE(&lt;uri&gt;)</code>.</p>
-      <p><i>@@If there is a datatype for embedded triples, then extend
-          <code>DATATYPE</code> to return the datatype URI</i>.</p>
+    <section id="rdf-star-termEquals">
+      <h3><code class="heavy">RDFterm-equal</code></h3>
+      <p>
+        The function <code>RDFterm-equal</code> is the default dispatch for the
+        <code>=</code> operator.
+      </p>
+      <p>
+        Extend the function defintion so that it returns <code>true</code> if term1 and term2 are both RDF-star triple
+        terms and <code>RDFterm-equal</code> is <code>true</code> for pairwise for the component RDF terms.
+      </p>
+      <div class="box">
+        <p>
+          If exactly one of the arguments is an RDF-star triple terms, return <code>false</code>.
+        </p>
+        <p>
+          If both arguments are RDF-star triple terms:
+        <p style="margin-left:20px">
+          <code style="color:black;font-weight:bold">RDFterm-equal</code><code>(&lt;&lt;S1 P1 O1&gt;&gt;,
+            &lt;&lt;S2 P2 O2&gt;&gt;)</code>
+        </p>
+        <p>
+          is evaluated as
+        </p>
+        <p style="margin-left:20px">
+          <code>RDFterm-equal(S1, S2) && RDFterm-equal(P1, P2) && RDFterm-equal(O1, O2)</code>
+        </p>
+        <p>This is applied recursively.</p>
+        <p>If one argument is an RDF-star triple term and the other argument is not, 
+          the result is <code>false</code>.
+        </p>
+      </div>
+      <p>
+        It produces an error if matching RDF terms in nested RDF triple terms when 
+        both literals but not the same RDF term. This is the same as the exisiting
+        <code>RDFterm-equal</code>. Operator mapping overides this behavior.
+      </p>
+      <p>
+        The case of two RDF-star triple terms is covered by the operator dispatch mappings
+        and covers cases involving literals.
+      </p>
     </section>
 
   </section>
@@ -223,10 +261,9 @@ f           If both arguments are RDF-star triple terms:
       <a href="https://www.w3.org/TR/sparql11-query/#OperatorMapping"
          rel="nofollow">17.3 Operator Mapping</a>
     </p>
-
     <table class="operator">
-      <caption>SPARQL Binary Operators (RDF-star)</caption>
-      <tbody>
+      <caption>SPARQL Binary Operators (SPARQL-star)</caption>
+      <tbody class="small">
         <tr>
           <th class="major" scope="col">Operator</th>
           <th class="major" scope="col">Type(A)</th>
@@ -236,22 +273,20 @@ f           If both arguments are RDF-star triple terms:
         </tr>
 
         <tr>
-          <th colspan="5" class="subHeading" scope="col">SPARQL Tests</th>
+          <th colspan="5" class="subHeading" scope="col">SPARQL-star Tests</th>
         </tr>
         <tr>
           <th>
             <a href="#rRelationalExpression" title="RelationalExpression"
                >A <span class="FAOTtoken">=</span> B</a>
           </th>
+          <td><span class="type RDFterm">RDF triple term</span></td>
+          <td><span class="type RDFterm">RDF triple term</span></td>
           <td>
-            <span class="type RDFterm">RDF term</span>
-          </td>
-          <td>
-            <span class="type RDFterm">RDF term</span>
-          </td>
-          <td class="xpathOp">
-            <a href="#defn-sparql-compare" class="SPARQLoperator"
-               >sparql-compare</a>(A, B) = 0
+            <a href="https://www.w3.org/TR/xpath-functions/#func-numeric-equal"
+               >op:numeric-equal</a>(<a href="#defn-sparql-compare" 
+                                        class="SPARQLoperator"
+                                        >sparql-compare</a>(A, B), 0)
           </td>
           <td>xsd:boolean</td>
         </tr>
@@ -260,9 +295,16 @@ f           If both arguments are RDF-star triple terms:
             <a href="#rRelationalExpression" title="RelationalExpression"
                >A <span class="FAOTtoken">!=</span> B</a>
           </th>
-          <td>&nbsp;</td>
-          <td>&nbsp;</td>
-          <td>&nbsp;</td>
+          <td><span class="type RDFterm">RDF triple term</span></td>
+          <td><span class="type RDFterm">RDF triple term</span></td>
+
+          <td>
+            <a href="http://www.w3.org/TR/xpath-functions/#func-not"
+               >fn:not</a>(<a href="https://www.w3.org/TR/xpath-functions/#func-numeric-equal"
+                              >op:numeric-equal</a>(<a href="#defn-sparql-compare" 
+                                                       class="SPARQLoperator"
+                                                       >sparql-compare</a>(A, B), 0))
+          </td>
           <td>xsd:boolean</td>
         </tr>
         <tr>
@@ -270,9 +312,14 @@ f           If both arguments are RDF-star triple terms:
             <a href="#rRelationalExpression" title="RelationalExpression"
                >A <span class="FAOTtoken">&lt;</span> B</a>
           </th>
-          <td>&nbsp;</td>
-          <td>&nbsp;</td>
-          <td>&nbsp;</td>
+          <td><span class="type RDFterm">RDF triple term</span></td>
+          <td><span class="type RDFterm">RDF triple term</span></td>
+          <td>
+           <a href="https://www.w3.org/TR/xpath-functions/#func-numeric-equal"
+              >op:numeric-equal</a>(<a href="#defn-sparql-compare" 
+                                       class="SPARQLoperator"
+                                       >sparql-compare</a>(A, B), -1)
+           </td>
           <td>xsd:boolean</td>
         </tr>
         <tr>
@@ -280,9 +327,15 @@ f           If both arguments are RDF-star triple terms:
             <a href="#rRelationalExpression" title="RelationalExpression"
                >A <span class="FAOTtoken">&lt;=</span> B</a>
           </th>
-          <td>&nbsp;</td>
-          <td>&nbsp;</td>
-          <td>&nbsp;</td>
+          <td><span class="type RDFterm">RDF triple term</span></td>
+          <td><span class="type RDFterm">RDF triple term</span></td>
+          <td>
+           <a href="http://www.w3.org/TR/xpath-functions/#func-not"
+              >fn:not</a>(<a href="https://www.w3.org/TR/xpath-functions/#func-numeric-equal"
+                             >op:numeric-equal</a>(<a href="#defn-sparql-compare" 
+                                                      class="SPARQLoperator"
+                                                      >sparql-compare</a>(A, B), 1))
+           </td>
           <td>xsd:boolean</td>
         </tr>
         <tr>
@@ -290,9 +343,15 @@ f           If both arguments are RDF-star triple terms:
             <a href="#rRelationalExpression" title="RelationalExpression"
                >A <span class="FAOTtoken">&gt;</span> B</a>
           </th>
-          <td>&nbsp;</td>
-          <td>&nbsp;</td>
-          <td>&nbsp;</td>
+          <td><span class="type RDFterm">RDF triple term</span></td>
+          <td><span class="type RDFterm">RDF triple term</span></td>
+          <td>
+            <a href="https://www.w3.org/TR/xpath-functions/#func-numeric-equal"
+               >op:numeric-equal</a>(<a href="#defn-sparql-compare" 
+                                        class="SPARQLoperator"
+                                        >sparql-compare</a>(A, B), 1)
+          </td>
+
           <td>xsd:boolean</td>
         </tr>
         <tr>
@@ -300,9 +359,15 @@ f           If both arguments are RDF-star triple terms:
             <a href="#rRelationalExpression" title="RelationalExpression"
                >A <span class="FAOTtoken">&gt;=</span> B</a>
           </th>
-          <td>&nbsp;</td>
-          <td>&nbsp;</td>
-          <td>&nbsp;</td>
+          <td><span class="type RDFterm">RDF triple term</span></td>
+          <td><span class="type RDFterm">RDF triple term</span></td>
+          <td>
+            <a href="http://www.w3.org/TR/xpath-functions/#func-not"
+               >fn:not</a>(<a href="https://www.w3.org/TR/xpath-functions/#func-numeric-equal"
+                              >op:numeric-equal</a>(<a href="#defn-sparql-compare" 
+                                                       class="SPARQLoperator"
+                                                       >sparql-compare</a>(A, B), -1))
+          </td>
           <td>xsd:boolean</td>
         </tr>
       </tbody>
@@ -311,11 +376,10 @@ f           If both arguments are RDF-star triple terms:
   </section>
 
   <section id="triple-term-comparison">
-    <h3>Comparing triple terms with <code>ORDER BY</code></h3>
+    <h3>Triple terms with <code>ORDER BY</code></h3>
 
     <p>There is an added item to the ordering terms when they would not 
       otherwise be ordered. RDF start triple terms are placed last (highest).</p>
-
     <ol>
       <li>(Lowest) no value assigned to the variable 
         or expression in this solution.</li>
@@ -324,9 +388,9 @@ f           If both arguments are RDF-star triple terms:
       <li>RDF literals</li>
       <li><i>RDF-star triple terms</i></li>
     </ol>
+    <p>RDF-star triple terms are compared using the <code>&lt;</code> operator.
+    </p>
 
-    <p>@@ <em>Comparision of embedded triple terms</em></p>
-    <p>@@ <code class="heavy">RDFstar-compare</code></p>
 </section>
 
 </section>
